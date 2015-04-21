@@ -15,13 +15,7 @@
  ****************************************************/
 
 
-#if ARDUINO >= 100
- #include "Arduino.h"
- #include "SoftwareSerial.h"
-#else
- #include "WProgram.h"
- #include "NewSoftSerial.h"
-#endif
+#include <Arduino.h>
 
 #define VC0706_RESET  0x26
 #define VC0706_GEN_VERSION 0x11
@@ -63,11 +57,6 @@
 
 class Adafruit_VC0706 {
  public:
-#if ARDUINO >= 100
-  Adafruit_VC0706(SoftwareSerial *ser); // Constructor when using SoftwareSerial
-#else
-  Adafruit_VC0706(NewSoftSerial  *ser); // Constructor when using NewSoftSerial
-#endif
   Adafruit_VC0706(HardwareSerial *ser); // Constructor when using HardwareSerial
   boolean begin(uint16_t baud = 38400);
   boolean reset(void);
@@ -108,11 +97,6 @@ char* setBaud115200();
   uint8_t  camerabuff[CAMERABUFFSIZ+1];
   uint8_t  bufferLen;
   uint16_t frameptr;
-#if ARDUINO >= 100
-  SoftwareSerial *swSerial;
-#else
-  NewSoftSerial  *swSerial;
-#endif
   HardwareSerial *hwSerial;
 
   void common_init(void);

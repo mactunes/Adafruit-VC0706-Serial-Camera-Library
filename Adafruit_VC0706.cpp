@@ -19,21 +19,10 @@
 
 // Initialization code used by all constructor types
 void Adafruit_VC0706::common_init(void) {
-  swSerial  = NULL;
   hwSerial  = NULL;
   frameptr  = 0;
   bufferLen = 0;
   serialNum = 0;
-}
-
-// Constructor when using SoftwareSerial or NewSoftSerial
-#if ARDUINO >= 100
-Adafruit_VC0706::Adafruit_VC0706(SoftwareSerial *ser) {
-#else
-Adafruit_VC0706::Adafruit_VC0706(NewSoftSerial *ser) {
-#endif
-  common_init();  // Set everything to common state, then...
-  swSerial = ser; // ...override swSerial with value passed.
 }
 
 // Constructor when using HardwareSerial
@@ -43,8 +32,7 @@ Adafruit_VC0706::Adafruit_VC0706(HardwareSerial *ser) {
 }
 
 boolean Adafruit_VC0706::begin(uint16_t baud) {
-  if(swSerial) swSerial->begin(baud);
-  else         hwSerial->begin(baud);
+  hwSerial->begin(baud);
   return reset();
 }
 
@@ -81,7 +69,7 @@ uint8_t Adafruit_VC0706::getMotionStatus(uint8_t x) {
 
 boolean Adafruit_VC0706::setMotionDetect(boolean flag) {
   if (! setMotionStatus(VC0706_MOTIONCONTROL, 
-			VC0706_UARTMOTION, VC0706_ACTIVATEMOTION))
+      VC0706_UARTMOTION, VC0706_ACTIVATEMOTION))
     return false;
 
   uint8_t args[] = {0x01, flag};
@@ -242,9 +230,9 @@ uint8_t Adafruit_VC0706::getCompression(void) {
 
 boolean Adafruit_VC0706::setPTZ(uint16_t wz, uint16_t hz, uint16_t pan, uint16_t tilt) {
   uint8_t args[] = {0x08, wz >> 8, wz, 
-		    hz >> 8, wz, 
-		    pan>>8, pan, 
-		    tilt>>8, tilt};
+        hz >> 8, wz, 
+        pan>>8, pan, 
+        tilt>>8, tilt};
 
   return (! runCommand(VC0706_SET_ZOOM, args, sizeof(args), 5));
 }
@@ -355,7 +343,7 @@ uint8_t * Adafruit_VC0706::readPicture(uint8_t n) {
 
 
 boolean Adafruit_VC0706::runCommand(uint8_t cmd, uint8_t *args, uint8_t argn, 
-			   uint8_t resplen, boolean flushflag) {
+         uint8_t resplen, boolean flushflag) {
   // flush out anything in the buffer?
   if (flushflag) {
     readResponse(100, 10); 
@@ -370,52 +358,17 @@ boolean Adafruit_VC0706::runCommand(uint8_t cmd, uint8_t *args, uint8_t argn,
 }
 
 void Adafruit_VC0706::sendCommand(uint8_t cmd, uint8_t args[] = 0, uint8_t argn = 0) {
-  if(swSerial) {
-#if ARDUINO >= 100
-    swSerial->write((byte)0x56);
-    swSerial->write((byte)serialNum);
-    swSerial->write((byte)cmd);
+  hwSerial->print(0x56, BYTE);
+  hwSerial->print(serialNum, BYTE);
+  hwSerial->print(cmd, BYTE);
 
-    for (uint8_t i=0; i<argn; i++) {
-      swSerial->write((byte)args[i]);
-      //Serial.print(" 0x");
-      //Serial.print(args[i], HEX);
-    }
-#else
-    swSerial->print(0x56, BYTE);
-    swSerial->print(serialNum, BYTE);
-    swSerial->print(cmd, BYTE);
-
-    for (uint8_t i=0; i<argn; i++) {
-      swSerial->print(args[i], BYTE);
-      //Serial.print(" 0x");
-      //Serial.print(args[i], HEX);
-    }
-#endif
-  } else {
-#if ARDUINO >= 100
-    hwSerial->write((byte)0x56);
-    hwSerial->write((byte)serialNum);
-    hwSerial->write((byte)cmd);
-
-    for (uint8_t i=0; i<argn; i++) {
-      hwSerial->write((byte)args[i]);
-      //Serial.print(" 0x");
-      //Serial.print(args[i], HEX);
-    }
-#else
-    hwSerial->print(0x56, BYTE);
-    hwSerial->print(serialNum, BYTE);
-    hwSerial->print(cmd, BYTE);
-
-    for (uint8_t i=0; i<argn; i++) {
-      hwSerial->print(args[i], BYTE);
-      //Serial.print(" 0x");
-      //Serial.print(args[i], HEX);
-    }
-#endif
+  for (uint8_t i=0; i<argn; i++) {
+    hwSerial->print(args[i], BYTE);
+    //Serial.print(" 0x");
+    //Serial.print(args[i], HEX);
   }
-//Serial.println();
+
+  Serial.println();
 }
 
 uint8_t Adafruit_VC0706::readResponse(uint8_t numbytes, uint8_t timeout) {
@@ -424,7 +377,7 @@ uint8_t Adafruit_VC0706::readResponse(uint8_t numbytes, uint8_t timeout) {
   int avail;
  
   while ((timeout != counter) && (bufferLen != numbytes)){
-    avail = swSerial ? swSerial->available() : hwSerial->available();
+    avail = hwSerial->available();
     if (avail <= 0) {
       delay(1);
       counter++;
@@ -432,7 +385,7 @@ uint8_t Adafruit_VC0706::readResponse(uint8_t numbytes, uint8_t timeout) {
     }
     counter = 0;
     // there's a byte!
-    camerabuff[bufferLen++] = swSerial ? swSerial->read() : hwSerial->read();
+    camerabuff[bufferLen++] = hwSerial->read();
   }
   //printBuff();
 //camerabuff[bufferLen] = 0;
